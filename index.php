@@ -2,6 +2,7 @@
 require_once 'vendor/autoload.php';
 include_once 'constants/autoload.php';
 require_once 'functions.php';
+include_once 'database.php';
 
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
@@ -11,42 +12,53 @@ $phpWord = new PhpWord();
 $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 
 (function(){
-	global $section;
+	global $section, $student;
+
+	$col = [
+		MAX_CONTENT_W * 19.74 / 100,
+		MAX_CONTENT_W * 39.44 / 100,
+		MAX_CONTENT_W * 15.79 / 100,
+		MAX_CONTENT_W * 25.01 / 100,
+	];
+
+	$class = [
+		'satu','dua','tiga','empat','lima','enam'
+	][$student['class']-1];
+	$smt = $student['smt'] % 2 !== 0 ? 'satu' : 'dua';
+
 	$idty_tbl = $section->addTable([
 		'alignment' => 'center',
 		'cellMarginLeft' => cm(0.15),
 		'cellMarginRight' => cm(0.15),
 	]);
 
-	$idty_tbl->addRow(cm(0.45));
-	add_cell($idty_tbl, 3.75, 'Nama Peserta Didik');
-	add_cell($idty_tbl, 7.49, ': name');
-	add_cell($idty_tbl, 3.00, 'Kelas');
-	add_cell($idty_tbl, 4.75, ': $class_');
+	$cont = [
+		['Nama Peserta Didik', ": {$student['name']}", 'Kelas', ": {$student['class']} ($class)"],
+		['NISN', ": {$student['nisn']}", 'Fase', ": {$student['phase']}"],
+		['Sekolah', ": {$student['school']['name']}", 'Semester', ": {$student['smt']} ($smt)"],
+		['Alamat', ": {$student['school']['addr']}", 'Tahun Pelajaran', ": {$student['year']}"],
+	];
 
-	$idty_tbl->addRow(cm(0.45));
-	add_cell($idty_tbl, 3.75, 'NISN');
-	add_cell($idty_tbl, 7.49, ': $nisn');
-	add_cell($idty_tbl, 3.00, 'Fase');
-	add_cell($idty_tbl, 4.75, ': $phase');
-
-	$idty_tbl->addRow(cm(0.45));
-	add_cell($idty_tbl, 3.75, 'Sekolah');
-	add_cell($idty_tbl, 7.49, ': $school');
-	add_cell($idty_tbl, 3.00, 'Semester');
-	add_cell($idty_tbl, 4.75, ': $smt');
-
-	$idty_tbl->addRow(cm(0.45));
-	add_cell($idty_tbl, 3.75, 'Alamat');
-	add_cell($idty_tbl, 7.49, ': $addr');
-	add_cell($idty_tbl, 3.00, 'Tahun Pelajaran');
-	add_cell($idty_tbl, 4.75, ': $year');
+	for($i=0;$i<4;$i++){
+		$idty_tbl->addRow(cm(0.45));
+		for($j=0;$j<4;$j++){
+			add_cell($idty_tbl, $col[$j], $cont[$i][$j]);
+		}
+	}
 
 	$section->addText('', STD_FONT, STD_PARAGRAPH);
 })();
 
 (function(){
-	global $section;
+	global $section, $student;
+
+	$col = [
+		MAX_CONTENT_W * 04.52 / 100,
+		MAX_CONTENT_W * 23.02 / 100,
+		MAX_CONTENT_W * 12.95 / 100,
+		MAX_CONTENT_W * 59.50 / 100,
+	];
+
 	$subj_tbl = $section->addTable([
 		'borderSize' => 6,
 		'borderColor' => '000000',
@@ -54,51 +66,37 @@ $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 		'cellMarginRight' => cm(0.15),
 	]);
 
+	$cont = ['No','Mata Pelajaran','Nilai Akhir','Capaian Kompetensi'];
 	$subj_tbl->addRow(cm(0.45));
-	add_cell($subj_tbl, 0.86, 'No', ['font' => BOLD, 'para' => CENTER_P]);
-	add_cell($subj_tbl, 4.38, 'Mata Pelajaran', ['font' => BOLD, 'para' => CENTER_P]);
-	add_cell($subj_tbl, 2.46, 'Nilai Akhir', ['font' => BOLD, 'para' => CENTER_P]);
-	add_cell($subj_tbl, 11.3, 'Capaian Kompetensi', ['font' => BOLD, 'para' => CENTER_P]);
-
-	$main_subj = [
-		['name' => 'Pendidikan Agama Islam', 'score' => rand(70,100)],
-		['name' => 'Pendidikan Pancasila', 'score' => rand(70,100)],
-		['name' => 'Bahasa Indonesia', 'score' => rand(70,100)],
-		['name' => 'Matematika', 'score' => rand(70,100)],
-		['name' => 'Ilmu Pengetahuan Alam dan Sosial', 'score' => rand(70,100)],
-		['name' => 'Pendidikan Jasmani, Olahraga dan Kesehatan', 'score' => rand(70,100)]
-	];
+	for($i=0;$i<4;$i++){
+		add_cell($subj_tbl, $col[$i], $cont[$i], ['font' => BOLD, 'para' => CENTER_P]);
+	}
 
 	$n = 0;
-	foreach($main_subj as $subj){
+	foreach($student['main_subj'] as $subj){
 		$subj_tbl->addRow(cm(1.8));
-		add_cell($subj_tbl, 0.86, ++$n, ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
-		add_cell($subj_tbl, 4.38, $subj['name'], ['cell' => VALIGN_CENTER]);
-		add_cell($subj_tbl, 2.46, $subj['score'], ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
-		add_cell($subj_tbl, 11.3, 'Ananda Baik dalam $kd[0], Ananda Sangat Baik dalam $kd[1]', ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[0], ++$n, ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[1], $subj['name'], ['cell' => VALIGN_CENTER]);
+		add_cell($subj_tbl, $col[2], $subj['score'], ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[3], "Ananda Baik dalam {$subj['kd'][0]}, Ananda Sangat Baik dalam {$subj['kd'][1]}", ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 	}
 
 	$subj_tbl->addRow(cm(0.45));
-	add_cell($subj_tbl, 18.99, 'Muatan Lokal', ['cell' => ['gridSpan' => 4] ]);
+	add_cell($subj_tbl, MAX_CONTENT_W, 'Muatan Lokal', ['cell' => ['gridSpan' => 4] ]);
 
-	$xtra_subj = [
-		['name' => 'Bahasa Daerah', 'score' => rand(70,100)],
-		['name' => 'Baca Tulis Al-Qur\'an', 'score' => rand(70,100)]
-	];
-
-	foreach($xtra_subj as $subj){
+	foreach($student['xtra_subj'] as $subj){
 		$subj_tbl->addRow(cm(1.8));
-		add_cell($subj_tbl, 0.86, ++$n, ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
-		add_cell($subj_tbl, 4.38, $subj['name'], ['cell' => VALIGN_CENTER]);
-		add_cell($subj_tbl, 2.46, $subj['score'], ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
-		add_cell($subj_tbl, 11.3, 'Ananda Baik dalam $kd[0], Ananda Sangat Baik dalam $kd[1]', ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[0], ++$n, ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[1], $subj['name'], ['cell' => VALIGN_CENTER]);
+		add_cell($subj_tbl, $col[2], $subj['score'], ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
+		add_cell($subj_tbl, $col[3], "Ananda Baik dalam {$subj['kd'][0]}, Ananda Sangat Baik dalam {$subj['kd'][0]}", ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 	}
 
 	$section->addText('', STD_FONT, STD_PARAGRAPH);
 })();
 
 (function(){
-	global $section;
+	global $section, $student;
 	$xtra_tbl = $section->addTable([
 		'borderSize' => 6,
 		'borderColor' => '000000',
@@ -106,19 +104,13 @@ $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 		'cellMarginRight' => cm(0.15),
 	]);
 
-	$xtra = [
-		[ 'name' => 'Pramuka', 'detail' => '' ],
-		[ 'name' => '', 'detail' => '' ],
-		[ 'name' => '', 'detail' => '' ],
-	];
-
 	$xtra_tbl->addRow(cm(0.45));
 	add_cell($xtra_tbl,  0.86, 'No', ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 	add_cell($xtra_tbl,  5.20, 'Ekstra', ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 	add_cell($xtra_tbl, 12.93, 'Keterangan', ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 
 	$n = 0;
-	foreach($xtra as $x){
+	foreach($student['xtra'] as $x){
 		$xtra_tbl->addRow(cm(0.45));
 		add_cell($xtra_tbl,  0.86, ++$n, ['cell' => VALIGN_CENTER, 'para' => CENTER_P]);
 		add_cell($xtra_tbl,  5.20, $x['name'], ['cell' => VALIGN_CENTER]);
@@ -129,7 +121,8 @@ $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 })();
 
 (function(){
-	global $section;
+	global $section, $student;
+	[ 's' => $s, 'i' => $i, 'a' => $a ] = $student['pres'];
 	$absn_tbl = $section->addTable([
 		'borderSize' => 6,
 		'borderColor' => '000000',
@@ -143,17 +136,17 @@ $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 
 	$absn_tbl->addRow(cm(0.45));
 	add_cell($absn_tbl,  3.50, 'Sakit');
-	add_cell($absn_tbl,  1.69, ': ... hari');
+	add_cell($absn_tbl,  1.69, ": $s hari");
 	add_cell($absn_tbl, 13.75, '', ['cell' => BORDER_NONE]);
 
 	$absn_tbl->addRow(cm(0.45));
 	add_cell($absn_tbl,  3.50, 'Izin');
-	add_cell($absn_tbl,  1.69, ': ... hari');
+	add_cell($absn_tbl,  1.69, ": $i hari");
 	add_cell($absn_tbl, 13.75, '', ['cell' => BORDER_NONE]);
 
 	$absn_tbl->addRow(cm(0.45));
 	add_cell($absn_tbl,  3.50, 'Tanpa Keterangan');
-	add_cell($absn_tbl,  1.69, ': ... hari');
+	add_cell($absn_tbl,  1.69, ": $a hari");
 	add_cell($absn_tbl, 13.75, '', ['cell' => BORDER_NONE]);
 
 	$section->addText('', STD_FONT, STD_PARAGRAPH);
@@ -180,3 +173,5 @@ $section = $phpWord->addSection([ ...A4, ...MARGIN ]);
 
 $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
 $objWriter->save('Rapor.docx');
+$objWriter->save('Rapor.doc');
+$objWriter->save('Rapor.pdf');
